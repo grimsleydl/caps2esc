@@ -35,6 +35,7 @@ void write_event(const struct input_event *event) {
 
 int main(void) {
     int capslock_is_down = 0, esc_give_up = 0;
+    int esc_timeout = 250;
 
     struct input_event input;
     struct timespec start, end;
@@ -55,11 +56,10 @@ int main(void) {
             continue;
         }
         if (capslock_is_down) {
+            write_event(&ctrl_down);
+            write_event(&syn);
             if (!esc_give_up && input.value) {
                 esc_give_up = 1;
-                write_event(&ctrl_down);
-                write_event(&syn);
-                usleep(20000);
             }
             if (equal(&input, &capslock_down) ||
                 equal(&input, &capslock_repeat))
@@ -67,21 +67,21 @@ int main(void) {
 
             if (equal(&input, &capslock_up)) {
                 clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+                write_event(&ctrl_up);
                 capslock_is_down = 0;
                 if (esc_give_up) {
                     esc_give_up = 0;
-                    write_event(&ctrl_up);
                     continue;
                 }
-                if (((end.tv_sec - start.tv_sec) / 1.0e6) <= 300) {
+                if (((end.tv_sec - start.tv_sec) / 1.0e6) <= esc_timeout) {
                     write_event(&esc_down);
                     write_event(&syn);
                     write_event(&esc_up);
                     continue;
                 }
-                write_event(&syn);
                 usleep(20000);
-                write_event(&esc_up);
+                /* write_event(&esc_up); */
+                write_event(&syn);
                 continue;
             }
 
