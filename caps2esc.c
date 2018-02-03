@@ -8,15 +8,15 @@
 // clang-format off
 const struct input_event
 esc_up          = {.type = EV_KEY, .code = KEY_ESC,      .value = 0},
-    ctrl_up         = {.type = EV_KEY, .code = KEY_LEFTCTRL, .value = 0},
-    capslock_up     = {.type = EV_KEY, .code = KEY_CAPSLOCK, .value = 0},
-    esc_down        = {.type = EV_KEY, .code = KEY_ESC,      .value = 1},
-    ctrl_down       = {.type = EV_KEY, .code = KEY_LEFTCTRL, .value = 1},
-    capslock_down   = {.type = EV_KEY, .code = KEY_CAPSLOCK, .value = 1},
-    esc_repeat      = {.type = EV_KEY, .code = KEY_ESC,      .value = 2},
-    ctrl_repeat     = {.type = EV_KEY, .code = KEY_LEFTCTRL, .value = 2},
-    capslock_repeat = {.type = EV_KEY, .code = KEY_CAPSLOCK, .value = 2},
-    syn             = {.type = EV_SYN, .code = SYN_REPORT,   .value = 0};
+ctrl_up         = {.type = EV_KEY, .code = KEY_LEFTCTRL, .value = 0},
+capslock_up     = {.type = EV_KEY, .code = KEY_CAPSLOCK, .value = 0},
+esc_down        = {.type = EV_KEY, .code = KEY_ESC,      .value = 1},
+ctrl_down       = {.type = EV_KEY, .code = KEY_LEFTCTRL, .value = 1},
+capslock_down   = {.type = EV_KEY, .code = KEY_CAPSLOCK, .value = 1},
+esc_repeat      = {.type = EV_KEY, .code = KEY_ESC,      .value = 2},
+ctrl_repeat     = {.type = EV_KEY, .code = KEY_LEFTCTRL, .value = 2},
+capslock_repeat = {.type = EV_KEY, .code = KEY_CAPSLOCK, .value = 2},
+syn             = {.type = EV_SYN, .code = SYN_REPORT,   .value = 0};
 // clang-format on
 
 int equal(const struct input_event *first, const struct input_event *second) {
