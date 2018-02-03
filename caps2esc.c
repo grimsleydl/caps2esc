@@ -3,24 +3,25 @@
 
 #include <unistd.h>
 #include <linux/input.h>
+#include <time.h>
 
 // clang-format off
 const struct input_event
 esc_up          = {.type = EV_KEY, .code = KEY_ESC,      .value = 0},
-ctrl_up         = {.type = EV_KEY, .code = KEY_LEFTCTRL, .value = 0},
-capslock_up     = {.type = EV_KEY, .code = KEY_CAPSLOCK, .value = 0},
-esc_down        = {.type = EV_KEY, .code = KEY_ESC,      .value = 1},
-ctrl_down       = {.type = EV_KEY, .code = KEY_LEFTCTRL, .value = 1},
-capslock_down   = {.type = EV_KEY, .code = KEY_CAPSLOCK, .value = 1},
-esc_repeat      = {.type = EV_KEY, .code = KEY_ESC,      .value = 2},
-ctrl_repeat     = {.type = EV_KEY, .code = KEY_LEFTCTRL, .value = 2},
-capslock_repeat = {.type = EV_KEY, .code = KEY_CAPSLOCK, .value = 2},
-syn             = {.type = EV_SYN, .code = SYN_REPORT,   .value = 0};
+    ctrl_up         = {.type = EV_KEY, .code = KEY_LEFTCTRL, .value = 0},
+    capslock_up     = {.type = EV_KEY, .code = KEY_CAPSLOCK, .value = 0},
+    esc_down        = {.type = EV_KEY, .code = KEY_ESC,      .value = 1},
+    ctrl_down       = {.type = EV_KEY, .code = KEY_LEFTCTRL, .value = 1},
+    capslock_down   = {.type = EV_KEY, .code = KEY_CAPSLOCK, .value = 1},
+    esc_repeat      = {.type = EV_KEY, .code = KEY_ESC,      .value = 2},
+    ctrl_repeat     = {.type = EV_KEY, .code = KEY_LEFTCTRL, .value = 2},
+    capslock_repeat = {.type = EV_KEY, .code = KEY_CAPSLOCK, .value = 2},
+    syn             = {.type = EV_SYN, .code = SYN_REPORT,   .value = 0};
 // clang-format on
 
 int equal(const struct input_event *first, const struct input_event *second) {
     return first->type == second->type && first->code == second->code &&
-           first->value == second->value;
+        first->value == second->value;
 }
 
 int read_event(struct input_event *event) {
@@ -34,7 +35,9 @@ void write_event(const struct input_event *event) {
 
 int main(void) {
     int capslock_is_down = 0, esc_give_up = 0;
+
     struct input_event input;
+    struct timespec start, end;
 
     setbuf(stdin, NULL), setbuf(stdout, NULL);
 
@@ -46,37 +49,43 @@ int main(void) {
             write_event(&input);
             continue;
         }
-
+        if (equal(&input, &capslock_down)) {
+            capslock_is_down = 1;
+            clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+            continue;
+        }
         if (capslock_is_down) {
-            if (equal(&input, &capslock_down) ||
-                equal(&input, &capslock_repeat))
-                continue;
-
-            if (equal(&input, &capslock_up)) {
-                capslock_is_down = 0;
-                if (esc_give_up) {
-                    esc_give_up = 0;
-                    write_event(&ctrl_up);
-                    continue;
-                }
-                write_event(&esc_down);
-                write_event(&syn);
-                usleep(20000);
-                write_event(&esc_up);
-                continue;
-            }
-
             if (!esc_give_up && input.value) {
                 esc_give_up = 1;
                 write_event(&ctrl_down);
                 write_event(&syn);
                 usleep(20000);
             }
-        } else if (equal(&input, &capslock_down)) {
-            capslock_is_down = 1;
-            continue;
-        }
+            if (equal(&input, &capslock_down) ||
+                equal(&input, &capslock_repeat))
+                continue;
 
+            if (equal(&input, &capslock_up)) {
+                clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+                capslock_is_down = 0;
+                if (esc_give_up) {
+                    esc_give_up = 0;
+                    write_event(&ctrl_up);
+                    continue;
+                }
+                if (((end.tv_sec - start.tv_sec) / 1.0e6) <= 300) {
+                    write_event(&esc_down);
+                    write_event(&syn);
+                    write_event(&esc_up);
+                    continue;
+                }
+                write_event(&syn);
+                usleep(20000);
+                write_event(&esc_up);
+                continue;
+            }
+
+        }
         if (input.code == KEY_ESC)
             input.code = KEY_CAPSLOCK;
         write_event(&input);
